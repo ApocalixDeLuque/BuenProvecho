@@ -1,8 +1,16 @@
+'use client';
 import Image from 'next/image';
 import Navbar from './ui/Navbar';
-import SectionsMenu from './ui/SectionsMenu';
+import CameraComponent from './ui/CameraComponent';
+import { useState } from 'react';
 
-export default async function Home() {
+export default function Home() {
+  const [image, setImage] = useState<string | null>(null);
+
+  const handleTakePhoto = (photo: string) => {
+    setImage(photo);
+  };
+
   return (
     <main className="flex flex-col items-center bg-gray-400">
       {/* Hero section */}
@@ -15,15 +23,13 @@ export default async function Home() {
         </div>
         <p className="font-semibold">Escanea tus alimentos</p>
         <div className="flex flex-col w-[80vw] h-[45vh] border-4 border-white border-dashed rounded-xl" />
-        <div className="rounded-lg p-3 mt-8 bg-white">
-          <div className="relative aspect-square h-6">
-            <Image className="" src="/images/lantern.png" alt="hero" fill />
-          </div>
-        </div>
+
+        <CameraComponent onTakePhoto={handleTakePhoto} />
       </div>
       <div className="flex flex-col w-full bg-spwhite rounded-t-2xl p-5 pb-20 z-10 gap-1 bg-white">
         <div className="flex flex-col text-spblack text-center text-pretty gap-4">
           <p className="text-2xl font-semibold py-8">Historial</p>
+          {image && <img className="z-50 sticky top-0 w-full bg-red-500" src={image} alt="Taken photo" />}
           <p className="leading-5">
             description
             <br /> <br />
