@@ -2,9 +2,10 @@
 import Image from 'next/image';
 import Navbar from './ui/Navbar';
 import CameraComponent from './ui/CameraComponent';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useContext, useEffect, useState } from 'react';
 import FoodList from './ui/FoodList';
 import { FoodItem } from './ui/FoodList';
+import DataContext from './ui/DataContext';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -12,7 +13,7 @@ export default function Home() {
   const [response, setResponse] = useState('');
   const [jsonResponse, setJsonResponse] = useState<FoodItem[] | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [scannedGroup, setScannedGroup] = useState<FoodItem[]>([]);
+  const { scannedGroup, setScannedGroup } = useContext(DataContext);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -115,7 +116,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col items-center bg-bpgreen">
+    <main className="flex flex-col items-center bg-bpwhite">
       {/* Hero section */}
       <div className="flex flex-col w-full min-h-[80vh] text-white items-center sticky gap-2 top-0">
         <div className="flex relative w-full justify-center items-center text-spwhite gap-2 p-16 pb-8">
@@ -206,7 +207,7 @@ export default function Home() {
         </div>
       </div>
       <div className="flex justify-center fixed bottom-0 z-50 w-full">
-        <Navbar />
+        <Navbar selected="Escanea" />
       </div>
     </main>
   );

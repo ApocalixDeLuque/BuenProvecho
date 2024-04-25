@@ -1,25 +1,23 @@
-import { OpenAI } from "openai";
-import { OpenAIStream } from "ai";
+import { OpenAI } from 'openai';
+import { OpenAIStream } from 'ai';
 
 const openAi = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const getCompletion = async (file: File, stream = false) => {
-  const encoded = await file
-    .arrayBuffer()
-    .then((buffer) => Buffer.from(buffer).toString("base64"));
+  const encoded = await file.arrayBuffer().then((buffer) => Buffer.from(buffer).toString('base64'));
 
   const completion = await openAi.chat.completions.create({
-    model: "gpt-4-vision-preview",
+    model: 'gpt-4-vision-preview',
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: [
           {
-            type: "text",
+            type: 'text',
             text: process.env.PROMPT || '',
           },
           {
-            type: "image_url",
+            type: 'image_url',
             image_url: {
               url: `data:image/jpeg;base64,${encoded}`,
             },
@@ -35,14 +33,12 @@ const getCompletion = async (file: File, stream = false) => {
 };
 
 export const classifyImage = async (file: File): Promise<string> => {
-  const completion = (await getCompletion(
-    file
-  )) as OpenAI.Chat.Completions.ChatCompletion;
+  const completion = (await getCompletion(file)) as OpenAI.Chat.Completions.ChatCompletion;
 
   const response = completion?.choices?.[0]?.message?.content;
 
   if (!response) {
-    throw new Error("No response from OpenAI");
+    throw new Error('No response from OpenAI');
   }
 
   return response;

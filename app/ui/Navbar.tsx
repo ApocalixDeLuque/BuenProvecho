@@ -1,16 +1,23 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface NavBarButtonProps {
   text: string;
+  href?: string;
   children?: React.ReactNode;
   selected: boolean;
   onClick: () => void;
 }
 
-const NavBarButton: React.FC<NavBarButtonProps> = ({ text, selected, children, onClick }) => {
+interface NavbarProps {
+  selected: string;
+}
+
+const NavBarButton: React.FC<NavBarButtonProps> = ({ text, href = '/', selected, children, onClick }) => {
   return (
-    <button
+    <Link
+      href={href}
       onClick={onClick}
       className={`flex flex-col w-full items-center text-[12px] text-black ${
         selected ? 'text-bpgreen' : 'border-bpgreen text-bpblack'
@@ -18,12 +25,12 @@ const NavBarButton: React.FC<NavBarButtonProps> = ({ text, selected, children, o
     >
       <div className="relative aspect-square h-6">{children}</div>
       {text}
-    </button>
+    </Link>
   );
 };
 
-const Navbar = () => {
-  const [selectedButton, setSelectedButton] = useState('Escanea');
+const Navbar: React.FC<NavbarProps> = ({ selected }) => {
+  const [selectedButton, setSelectedButton] = useState(selected);
 
   const handleButtonClick = (buttonText: string) => {
     setSelectedButton(buttonText);
@@ -61,7 +68,8 @@ const Navbar = () => {
           </g>
         </svg>
       </NavBarButton>
-      <button
+      <Link
+        href="/"
         className={`flex h-fit items-center rounded-lg p-2 ${
           selectedButton === 'Escanea' ? 'bg-bpgreen' : 'bg-gray-400'
         }`}
@@ -76,9 +84,10 @@ const Navbar = () => {
             />
           </g>
         </svg>
-      </button>
+      </Link>
       <NavBarButton
         text={'Chefsito'}
+        href="/chefsito"
         selected={selectedButton === 'Chefsito'}
         onClick={() => handleButtonClick('Chefsito')}
       >
