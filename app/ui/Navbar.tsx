@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface NavBarButtonProps {
   text: string;
@@ -23,14 +23,8 @@ const NavBarButton: React.FC<NavBarButtonProps> = ({ text, selected, children, o
 };
 
 const Navbar = () => {
-  const [selectedButton, setSelectedButton] = useState('Reabastercer');
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/perfil') {
-      setSelectedButton('Mis Ultrasonidos');
-    } else if (typeof window !== 'undefined' && window.location.pathname === '/medico') {
-      setSelectedButton('Mis Pacientes');
-    }
-  }, []);
+  const [selectedButton, setSelectedButton] = useState('Escanea');
+
   const handleButtonClick = (buttonText: string) => {
     setSelectedButton(buttonText);
   };
@@ -53,15 +47,15 @@ const Navbar = () => {
         </svg>
       </NavBarButton>
       <NavBarButton
-        text={'Alacena'}
-        selected={selectedButton === 'Alacena'}
-        onClick={() => handleButtonClick('Alacena')}
+        text={'Comunidad'}
+        selected={selectedButton === 'Comunidad'}
+        onClick={() => handleButtonClick('Comunidad')}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
           <g fill="none" fillRule="evenodd">
             <path d="M24 0v24H0V0h24ZM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018Zm.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022Zm-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01-.184-.092Z" />
             <path
-              fill={selectedButton === 'Alacena' ? '#4CCD99' : '#1F1803'}
+              fill={selectedButton === 'Comunidad' ? '#4CCD99' : '#1F1803'}
               d="M2.172 4.44A1 1 0 0 1 3 4h11a1 1 0 0 1 .928.629l.751 1.876.34-1.701A1 1 0 0 1 17 4h4a1 1 0 0 1 .98 1.196L21 10.1V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7.807L2.072 5.37a1 1 0 0 1 .1-.932ZM6 11v7h9v-7H6Zm11 0v7h2v-7h-2Zm2.18-2 .6-3h-1.96l-.6 3h1.96Zm-4.657 0-1.2-3H4.477l1.2 3h8.846ZM11 16a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1Z"
             />
           </g>

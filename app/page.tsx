@@ -3,21 +3,16 @@ import Image from 'next/image';
 import Navbar from './ui/Navbar';
 import CameraComponent from './ui/CameraComponent';
 import { FormEvent, useEffect, useState } from 'react';
-
-interface IItem {
-  cantidad: string;
-  categoría: string;
-  'fecha de caducidad': string;
-  'fecha del registro': string;
-  nombre: string;
-}
+import FoodList from './ui/FoodList';
+import { FoodItem } from './ui/FoodList';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [response, setResponse] = useState('');
-  const [jsonResponse, setJsonResponse] = useState<Record<string, any> | null>(null);
+  const [jsonResponse, setJsonResponse] = useState<FoodItem[] | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [scannedGroup, setScannedGroup] = useState<FoodItem[]>([]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,6 +64,7 @@ export default function Home() {
   }, [file]);
 
   const onReset = () => {
+    window.scrollTo({ top: 0 });
     setFile(null);
     setImage(null);
     setResponse('');
@@ -105,8 +101,21 @@ export default function Home() {
     return blob;
   };
 
+  const saveToAlacena = () => {
+    console.log('Saving to alacena');
+    setScannedGroup((prev) => {
+      if (jsonResponse) {
+        return [...prev, ...jsonResponse];
+      } else {
+        return prev;
+      }
+    });
+    console.log('Scanned group updated: ', scannedGroup);
+    onReset();
+  };
+
   return (
-    <main className="flex flex-col items-center bg-gray-400">
+    <main className="flex flex-col items-center bg-bpgreen">
       {/* Hero section */}
       <div className="flex flex-col w-full min-h-[80vh] text-white items-center sticky gap-2 top-0">
         <div className="flex relative w-full justify-center items-center text-spwhite gap-2 p-16 pb-8">
@@ -120,10 +129,11 @@ export default function Home() {
 
         <CameraComponent onTakePhoto={handleTakePhoto} />
       </div>
-      <div className="flex flex-col w-full bg-spwhite rounded-t-2xl p-5 pb-20 z-10 gap-1 bg-white">
-        {file && image ? (
-          <div className="flex flex-col text-spblack text-center text-pretty gap-4">
-            <p className="text-2xl font-semibold py-8">Resultados</p>
+      <div className="flex flex-col min-h-[101vh] w-full bg-spwhite rounded-t-2xl p-5 pb-28 z-10 gap-1 bg-white">
+        <div className="flex self-center w-1/4 h-1.5 bg-gray-400 rounded-lg" />
+        {file && image && (
+          <div className="flex flex-col text-spblack text-center text-pretty pb-40 gap-4">
+            <p className="text-2xl font-semibold py-8">Imagen tomada con éxito</p>
             <div className="relative aspect-square w-full">
               {image && (
                 <Image className="rounded-lg" src={image} alt="Taken photo" style={{ objectFit: 'cover' }} fill />
@@ -132,43 +142,68 @@ export default function Home() {
             <form onSubmit={onSubmit} className="flex flex-row">
               <button
                 className={`w-full ${
-                  submitted || !file ? 'opacity-50' : 'hover:bg-gray-100'
-                } bg-white mr-4 text-slate-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow`}
+                  submitted || !file ? 'opacity-50' : 'hover:bg-gray-100 bg-bpgreen/50 border-bpgreen'
+                } bg-gray-200 mr-4 text-slate-800 font-semibold py-2 px-4 border-2 border-gray-300 rounded shadow`}
                 type="submit"
                 disabled={submitted || !file}
               >
                 Analizar alimentos
               </button>
               <button
-                className="w-full bg-white hover:bg-red-100 text-red-800 font-semibold py-2 px-4 border border-red-400 rounded shadow"
+                className="w-full bg-red-200 hover:bg-red-300 text-red-800 font-semibold py-2 px-4 border-2 border-red-400 rounded shadow"
                 type="button"
                 onClick={onReset}
               >
                 Volver a tomar
               </button>
             </form>
-            <div>
-              {jsonResponse &&
-                jsonResponse.map((item, index) => (
-                  <div key={index} style={{ margin: '10px 0' }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Title: {item.title}</p>
-                    <p>Quantity: {item.quantity}</p>
-                    {/* Add more fields as needed */}
+            {submitted && !jsonResponse && (
+              <div className="flex flex-col items-center w-full font-bold border-2 border-gray-200 bg-gray-100 rounded-lg p-8 gap-4">
+                <div className="relative w-8 aspect-square">
+                  <Image src="/images/spinner.gif" alt="icon" fill />
+                </div>
+                Analizando alimentos...
+              </div>
+            )}
+
+            {jsonResponse && (
+              <>
+                <p className="text-2xl font-semibold py-8">
+                  Alimentos encontrados
+                  <br /> en la imagen
+                </p>
+                {jsonResponse.length > 0 ? (
+                  <>
+                    <FoodList items={jsonResponse} />
+                    <button
+                      onClick={saveToAlacena}
+                      className="w-full bg-bpgreen/50 hover:bg-bpgreen text-green-700 font-semibold py-2 px-4 border-2 border-bpgreen rounded shadow"
+                    >
+                      Guardar en alacena
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-start w-full border-2 border-red-200 bg-red-100 rounded-lg p-4">
+                    No se encontraron alimentos almacenables en la imagen
                   </div>
-                ))}
-            </div>
-            <p className="py-8 text-slate-800">{submitted && !response ? 'Analizando imagen' : response}</p>
-          </div>
-        ) : (
-          <div className="flex flex-col text-spblack text-center text-pretty gap-4">
-            <p className="text-2xl font-semibold py-8">Historial</p>
-            Lista de alimentos escaneados previamente aqui
+                )}
+              </>
+            )}
           </div>
         )}
 
-        {/* FUERA DE EL DIV PRINCIPAL
-        <SectionsMenu /> */}
-        {/* {children} */}
+        <div className="flex flex-col text-spblack text-center text-pretty gap-4">
+          <p className="text-2xl font-semibold py-8">Mi Alacena</p>
+          {scannedGroup.length > 0 ? (
+            <>
+              <FoodList items={scannedGroup} />
+            </>
+          ) : (
+            <div className="flex flex-col items-start w-full border-2 border-gray-200 bg-gray-100 rounded-lg p-4">
+              Tu lista de alimentos escaneados previamente aparecerá aquí
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex justify-center fixed bottom-0 z-50 w-full">
         <Navbar />
