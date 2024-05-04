@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🍽️ BuenProvecho
 
-## Getting Started
+Welcome to BuenProvecho, a FullStack web application developed for the sustainability track at HackAI DMF 2024. Our project leverages cutting-edge AI technology from OpenAI's GPT-4 vision to promote sustainability and reduce food waste by helping you manage your pantry more efficiently.
 
-First, run the development server:
+## 🚀 Project Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+BuenProvecho is designed to make your kitchen smarter. By scanning the food items you purchase or those you already have at home, our app uses GPT-4 vision to identify the exact list of ingredients, their quantities, classifications (fruits, vegetables, beverages, etc.), and estimated expiration dates. All this information is stored in a local database, where you can easily view and manage your food inventory.
+
+### 🌟 Features
+
+- **🔍 Food Scanner**: Scan your food items using a camera and get detailed insights about ingredients and their expiration dates.
+- **👨‍🍳 Chefsito - Your AI Kitchen Assistant**: Based on the items you have, Chefsito provides personalized cooking recipes, prioritizing ingredients that are about to expire to help you reduce food waste.
+- **📊 Local Database**: All scanned items are saved in a local database, allowing you to track and manage your pantry inventory effectively.
+- **💻 Responsive Design**: Built with React, Next.js 14, and Tailwind CSS for a seamless and responsive user experience.
+
+## 🛠️ Technology Stack
+
+- **Frontend**: React, Tailwind CSS, Next.js 14 (using App Router)
+- **Backend**: Local JSON storage, Global State Context for state management
+- **AI and Image Recognition**: OpenAI GPT-4 Vision for ingredient identification and Chefsito's recipe suggestions
+
+## 📦 Installation
+
+Before installation, ensure you create a `.env` file in the project root and add the following variables:
+
+```plaintext
+OPENAI_API_KEY=your_openai_api_key_here
+PROMPT="En la siguiente imágen, identifica los ingredientes y alimentos que existan y proporciona información detallada sobre cada..."
+CHEFSITO_PROMPT="Eres BuenProvecho, un asistente de IA que está especializado en recetas de cocina..."
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> [!IMPORTANT]
+> To test the BuenProvecho app effectively, you'll need access to the original prompts that drive the system. If you wish to obtain these prompts for testing purposes, please reach out via the following methods:
+>
+> - **LinkedIn**: Send a message request via [LinkedIn](linkedin.com/in/apocalix)
+> - **Email**: Contact me at [contact@apocalix.dev](mailto:contact@apocalix.dev) with the subject line "BuenProvecho Prompts Request"
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Then, ensure you have Bun installed on your machine. Run the following commands:
 
-## Learn More
+```bash
+bun install
 
-To learn more about Next.js, take a look at the following resources:
+bun run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔧 Usage
+After launching the app, give the site permission to use your camera and simply take an image of your food items through the web interface. The system will analyze the image, identify the ingredients, and provide you with a detailed breakdown, including their estimated expiration dates. The app keeps track of all recorded items during the session.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## 👨‍🍳 Chefsito - Your AI Chef
+Chefsito, our AI-powered assistant, helps you discover recipes based on the ingredients you have. It suggests recipes that utilize ingredients nearing their expiration, ensuring you get the most out of your groceries while minimizing waste.
