@@ -5,7 +5,7 @@ import CameraComponent from './ui/CameraComponent';
 import { FormEvent, useContext, useEffect, useState } from 'react';
 import FoodList from './ui/FoodList';
 import { FoodItem } from './ui/FoodList';
-import DataContext from './ui/DataContext';
+import DataContext, {DataProvider} from './ui/DataContext';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -13,7 +13,7 @@ export default function Home() {
   const [response, setResponse] = useState('');
   const [jsonResponse, setJsonResponse] = useState<FoodItem[] | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const { scannedGroup, setScannedGroup } = useContext(DataContext);
+  const { scannedGroup, setScannedGroup, loadScannedGroup } = useContext(DataContext);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,12 +47,42 @@ export default function Home() {
     });
   };
 
+  const saveToMongoDB = async (jsonResponse: string) => {
+    try {
+      const parsedResponse = JSON.parse(jsonResponse);
+
+      if (!Array.isArray(parsedResponse)) {
+        throw new Error('Expected an array of objects');
+      }
+
+      for (const item of parsedResponse) {
+        const response = await fetch('api/saveToMongoDB', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(item),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to save document to MongoDB: ${errorText}`);
+        }
+      }
+
+      console.log('All items saved to MongoDB');
+    } catch (error: any) {
+      console.error('Error saving to MongoDB: ', error.message);
+    }
+  };
+
   useEffect(() => {
     if (response !== '') {
       try {
         const jsonResponse = JSON.parse(response);
         setJsonResponse(jsonResponse);
         console.log('response updated: ', jsonResponse);
+        saveToMongoDB(JSON.stringify(jsonResponse)).then((r) => console.log(r));
       } catch (error) {
         console.error('Error parsing JSON: ', error);
       }
@@ -102,7 +132,11 @@ export default function Home() {
     return blob;
   };
 
-  const saveToAlacena = () => {
+  useEffect(() => {
+    loadScannedGroup();
+  }, []);
+
+  const saveToAlacena = async () => {
     console.log('Saving to alacena');
     setScannedGroup((prev) => {
       if (jsonResponse) {
@@ -112,10 +146,12 @@ export default function Home() {
       }
     });
     console.log('Scanned group updated: ', scannedGroup);
+    await loadScannedGroup();
     onReset();
   };
 
   return (
+
     <main className="flex flex-col items-center bg-bpwhite">
       {/* Hero section */}
       <div className="flex flex-col w-full min-h-[80vh] text-white items-center sticky gap-2 top-0">
