@@ -5,7 +5,7 @@ import CameraComponent from './ui/CameraComponent';
 import { FormEvent, useContext, useEffect, useState } from 'react';
 import FoodList from './ui/FoodList';
 import { FoodItem } from './ui/FoodList';
-import DataContext, {DataProvider} from './ui/DataContext';
+import DataContext, { DataProvider } from './ui/DataContext';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -112,6 +112,28 @@ export default function Home() {
     setFile(new File([blob], 'photo.jpg', { type: contentType }));
   };
 
+  const handleUploadPhoto = (photo: File) => {
+    console.log('Uploading photo...', photo);
+    setFile(photo);
+
+    filetob64(photo)
+      .then((image) => {
+        setImage(image);
+      })
+      .catch((error) => {
+        console.error('Error converting file to base64:', error);
+      });
+  };
+
+  const filetob64 = (file: File): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result?.toString() || '');
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const b64toBlob = (b64Data: string, contentType: string, sliceSize = 512) => {
     const byteCharacters = atob(b64Data);
     const byteArrays = [];
@@ -151,7 +173,6 @@ export default function Home() {
   };
 
   return (
-
     <main className="flex flex-col items-center bg-bpwhite">
       {/* Hero section */}
       <div className="flex flex-col w-full min-h-[80vh] text-white items-center sticky gap-2 top-0">
@@ -164,9 +185,9 @@ export default function Home() {
         <p className="font-semibold">Escanea tus alimentos</p>
         <div className="flex flex-col w-[80vw] h-[45vh] border-4 border-white border-dashed rounded-xl" />
 
-        <CameraComponent onTakePhoto={handleTakePhoto} />
+        <CameraComponent onUploadPhoto={handleUploadPhoto} onTakePhoto={handleTakePhoto} />
       </div>
-      <div className="flex flex-col min-h-[101vh] w-full bg-spwhite rounded-t-2xl p-5 pb-28 z-10 gap-1 bg-white">
+      <div className="flex flex-col min-h-[101vh] w-full rounded-t-2xl p-5 pb-28 z-10 gap-1 bg-gray-100">
         <div className="flex self-center w-1/4 h-1.5 bg-gray-400 rounded-lg" />
         {file && image && (
           <div className="flex flex-col text-spblack text-center text-pretty pb-40 gap-4">
