@@ -152,10 +152,10 @@ const LocationTag: React.FC<{ location: string }> = ({ location }) => {
   );
 };
 
-const FoodList: React.FC = () => {
+const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
   return (
     <div className="flex flex-col gap-4">
-      {fakeItems.map((item, index) => (
+      {items.map((item, index) => (
         <div key={index} className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4">
           <div className="flex w-full justify-between items-start">
             <p className="text-start text-lg leading-tight font-bold">{item.name}</p>
