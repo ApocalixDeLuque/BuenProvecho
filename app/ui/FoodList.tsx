@@ -1,7 +1,20 @@
-import React from 'react';
-import fakeItems from '../fakeItems';
+import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import cn from 'classnames';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from './Dialog';
 
 export type FoodItem = {
+  _id: string;
   name: string;
   category: string;
   amount: string;
@@ -54,39 +67,32 @@ const ubicaciones = [
 ];
 
 const unidadesMedida: string[] = [
-  // Unidades de peso
   'kg',
   'g',
   'mg',
   'lb',
   'oz',
-  // Unidades de volumen
   'L',
   'mL',
   'taza(s)',
-  // Unidades de cantidad
   'pieza(s)',
   'porción(es)',
   'rebanada(s)',
   'rodaja(s)',
   'gajo(s)',
-  // Unidades de empaque
   'paquete(s)',
   'caja(s)',
   'lata(s)',
   'botella(s)',
   'frasco(s)',
   'bolsa(s)',
-  // Unidades de agrupación
   'docena(s)',
   'racimo(s)',
   'manojo(s)',
   'ramo(s)',
   'puñado(s)',
-  // Unidades específicas para ciertos alimentos
   'cabeza(s)',
   'diente(s)',
-  // Unidades de área
   'hoja(s)',
 ];
 
@@ -152,10 +158,86 @@ const LocationTag: React.FC<{ location: string }> = ({ location }) => {
   );
 };
 
+function convertHours(hours: string | number): { text: string; colorClass: string } {
+  const hoursNum = typeof hours === 'string' ? parseInt(hours, 10) : hours;
+
+  if (isNaN(hoursNum) || hoursNum < 0) {
+    return { text: 'Tiempo inválido', colorClass: 'text-gray-500' };
+  }
+
+  const days = Math.floor(hoursNum / 24);
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  const remainingDays = days % 30;
+  const remainingHours = hoursNum % 24;
+
+  const parts = [];
+  if (years > 0) parts.push(`${years} año${years > 1 ? 's' : ''}`);
+  if (months > 0) parts.push(`${months} mes${months > 1 ? 'es' : ''}`);
+  if (remainingDays > 0) parts.push(`${remainingDays} día${remainingDays > 1 ? 's' : ''}`);
+  if (remainingHours > 0) parts.push(`${remainingHours} hora${remainingHours > 1 ? 's' : ''}`);
+
+  let text = parts.join(', ');
+  let colorClass: string;
+
+  if (hoursNum <= 0) {
+    text = 'Expirado';
+    colorClass = 'text-red-500';
+  } else if (hoursNum <= 72) {
+    // 3 días
+    colorClass = 'text-orange-500';
+  } else if (hoursNum <= 168) {
+    // 1 semana
+    colorClass = 'text-yellow-500';
+  } else {
+    colorClass = 'text-green-500';
+  }
+
+  if (text === '') {
+    text = 'Menos de una hora';
+  }
+
+  return { text, colorClass };
+}
+
 const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
+  const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [foodItems, setFoodItems] = useState(items);
+
+  const handleDeleteClick = (item: FoodItem) => {
+    setSelectedItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedItem) {
+      try {
+        const response = await fetch('/api/deleteFood', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: selectedItem._id }),
+        });
+
+        if (response.ok) {
+          setFoodItems((prevItems) => prevItems.filter((item) => item._id !== selectedItem._id));
+          console.log(`Item deleted: ${selectedItem.name}`);
+        } else {
+          console.error('Failed to delete item');
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+      }
+    }
+
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      {items.map((item, index) => (
+      {foodItems.map((item, index) => (
         <div key={index} className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4">
           <div className="flex w-full justify-between items-start">
             <p className="text-start text-lg leading-tight font-bold">{item.name}</p>
@@ -167,13 +249,47 @@ const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
             </p>
             <LocationTag location={item.location} />
           </div>
-          <p className="flex w-full justify-between text-nowrap text-sm pt-2">
+          <p className="flex w-full text-nowrap text-sm pt-2 gap-1">
             <span className="font-medium text-gray-800">Caduca en:</span>
-            <span className="font-semibold text-red-500">{item.expirationDate}</span>
+            {(() => {
+              const { text, colorClass } = convertHours(item.expirationDate);
+              return <span className={cn('font-semibold', colorClass)}>{text}</span>;
+            })()}
           </p>
-          <p className="text-sm text-gray-500 pt-2">Registrado el: {item.dateAdded}</p>
+          <div className="flex w-full items-end justify-between text-sm">
+            <p className="text-gray-500 pt-2">Registrado el: {item.dateAdded}</p>
+            <button
+              onClick={() => handleDeleteClick(item)}
+              className={cn(
+                'flex items-center justify-center',
+                'bg-red-500/10 text-red-500 border border-red-500',
+                'rounded h-6 w-6'
+              )}
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+            </button>
+          </div>
         </div>
       ))}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle>Confirmar eliminación</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            ¿Estás seguro de que quieres eliminar este artículo? Esta acción no se puede deshacer.
+          </DialogDescription>
+          <DialogFooter className="flex flex-col gap-2">
+            <DialogClose asChild>
+              <button className="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+            </DialogClose>
+            <button onClick={handleConfirmDelete} className="bg-red-500 text-white px-4 py-2 rounded">
+              Eliminar
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

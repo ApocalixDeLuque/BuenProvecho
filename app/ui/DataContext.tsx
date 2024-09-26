@@ -37,9 +37,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []); // Dependencias vacías para que se ejecute solo una vez
 
   return (
-    <DataContext.Provider value={{ scannedGroup, setScannedGroup, loadScannedGroup }}>
-      {children}
-    </DataContext.Provider>
+    <DataContext.Provider value={{ scannedGroup, setScannedGroup, loadScannedGroup }}>{children}</DataContext.Provider>
   );
 };
 

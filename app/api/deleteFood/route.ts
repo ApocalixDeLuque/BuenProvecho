@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 export async function DELETE(req: NextRequest) {
     try {
         const client = await clientPromise;
-        const db = client.db('BuenProvecha');
+        const db = client.db('BuenProvecho');
         const collection = db.collection('Food');
 
         const { id } = await req.json();
