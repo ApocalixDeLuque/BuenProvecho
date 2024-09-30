@@ -41,6 +41,7 @@ const CameraComponent: React.FC<CameraComponentProps> = ({ onTakePhoto, onUpload
         <>
           <Camera
             ref={camera}
+            facingMode="environment"
             errorMessages={{
               noCameraAccessible: undefined,
               permissionDenied: undefined,

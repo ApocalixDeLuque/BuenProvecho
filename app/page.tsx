@@ -216,7 +216,7 @@ export default function Home() {
                 Volver a tomar
               </button>
             </form>
-            <p>[{response}]</p>
+            {/* <p>[{response}]</p> */}
             {submitted && !jsonResponse && (
               <div className="flex flex-col items-center w-full font-bold border-2 border-gray-200 bg-gray-100 rounded-lg p-8 gap-4">
                 <div className="relative w-8 aspect-square">
