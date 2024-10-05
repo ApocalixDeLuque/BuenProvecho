@@ -203,7 +203,7 @@ function convertHours(hours: string | number): { text: string; colorClass: strin
 const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
   const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [foodItems, setFoodItems] = useState(items); // Use foodItems here
+  const [foodItems, setFoodItems] = useState(items);
 
   const handleDeleteClick = (item: FoodItem) => {
     setSelectedItem(item);
@@ -222,7 +222,6 @@ const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
         });
 
         if (response.ok) {
-          // Update foodItems state to reflect the deletion
           setFoodItems((prevItems) => prevItems.filter((item) => item._id !== selectedItem._id));
           console.log(`Item deleted: ${selectedItem.name}`);
         } else {
@@ -239,7 +238,6 @@ const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
   return (
     <div className="flex flex-col gap-4">
       {foodItems.map((item, index) => (
-        // Render items based on foodItems state
         <div key={index} className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4">
           <div className="flex w-full justify-between items-start">
             <p className="text-start text-lg leading-tight font-bold">{item.name}</p>
