@@ -14,6 +14,7 @@ import {
 } from './Dialog';
 
 export type FoodItem = {
+  _id: string;
   name: string;
   category: string;
   amount: string;
@@ -202,23 +203,43 @@ function convertHours(hours: string | number): { text: string; colorClass: strin
 const FoodList: React.FC<{ items: FoodItem[] }> = ({ items }) => {
   const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [foodItems, setFoodItems] = useState(items); // Use foodItems here
 
   const handleDeleteClick = (item: FoodItem) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedItem) {
-      // Perform the delete action here
-      console.log(`Deleting item: ${selectedItem.name}`);
+      try {
+        const response = await fetch('/api/deleteFood', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: selectedItem._id }),
+        });
+
+        if (response.ok) {
+          // Update foodItems state to reflect the deletion
+          setFoodItems((prevItems) => prevItems.filter((item) => item._id !== selectedItem._id));
+          console.log(`Item deleted: ${selectedItem.name}`);
+        } else {
+          console.error('Failed to delete item');
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+      }
     }
+
     setIsDialogOpen(false);
   };
 
   return (
     <div className="flex flex-col gap-4">
-      {items.map((item, index) => (
+      {foodItems.map((item, index) => (
+        // Render items based on foodItems state
         <div key={index} className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4">
           <div className="flex w-full justify-between items-start">
             <p className="text-start text-lg leading-tight font-bold">{item.name}</p>
