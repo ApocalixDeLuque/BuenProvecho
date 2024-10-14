@@ -49,13 +49,13 @@ const CameraComponent: React.FC<CameraComponentProps> = ({ onTakePhoto, onUpload
               canvas: undefined,
             }}
           />
-          <button className="flex z-50 sticky top-0 rounded-lg p-3 mt-8 bg-white gap-2" onClick={handleTakePhoto}>
+          <button className="flex z-50 sticky top-0 rounded-lg p-3 mt-8 bg-white gap-2 bg-[#4CCD99]" onClick={handleTakePhoto} >
             <FontAwesomeIcon icon={faCamera} className="h-6 w-6 text-black" />
             <p className="text-bpblack font-semibold">Capturar imagen</p>
           </button>
           <div
             onClick={handleOpenFileDialog}
-            className="flex z-50 cursor-pointer sticky top-0 rounded-lg p-3 mt-8 bg-white gap-2"
+            className="flex z-50 cursor-pointer sticky top-0 rounded-lg p-3 mt-8 bg-white gap-2 bg-[#4CCD99]"
           >
             <FontAwesomeIcon icon={faFileUpload} className="h-6 w-6 text-black" />
             <p className="text-bpblack font-semibold">Subir imagen</p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,15 +56,37 @@ export default function Perfil() {
         defaultValues: defaultProfile,
     });
 
-    function onSubmit(values: Profile) {
-        if (editingProfile) {
-            setProfiles(profiles.map(p => p.nombre === editingProfile.nombre ? values : p));
-        } else {
-            setProfiles([...profiles, values]);
+    useEffect(() => {
+        async function fetchProfiles() {
+            const response = await fetch('/api/getProfiles');
+            const data = await response.json();
+            setProfiles(data);
         }
-        setIsDialogOpen(false);
-        setEditingProfile(null);
-        form.reset(defaultProfile);
+        fetchProfiles();
+    }, []);
+
+    async function onSubmit(values: Profile) {
+        try {
+            const response = await fetch('/api/saveProfile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(values),
+            });
+
+            if (response.ok) {
+                const newProfile = await response.json();
+                setProfiles([...profiles, newProfile]);
+                setIsDialogOpen(false);
+                setEditingProfile(null);
+                form.reset(defaultProfile);
+            } else {
+                console.error('Error saving profile');
+            }
+        } catch (error) {
+            console.error('Error saving profile:', error);
+        }
     }
 
     function openEditDialog(profile: Profile) {
@@ -75,7 +97,7 @@ export default function Perfil() {
 
     return (
         <main className="flex flex-col items-center bg-bpwhite min-h-screen pb-20">
-            <div className="flex flex-col w-full text-white items-center sticky gap-2 top-0 bg-gray-800 p-4">
+            <div className="flex flex-col w-full text-white items-center sticky gap-2 top-0 bg-gray-800 p-4 bg-[#4CCD99]">
                 <div className="flex relative w-full justify-center items-center text-spwhite gap-2 p-4">
                     <UserCircle className="w-8 h-8" />
                     <p className="text-center text-[28px] font-semibold leading-10">Perfiles</p>
@@ -84,7 +106,7 @@ export default function Perfil() {
 
             <div className="flex flex-col w-full max-w-md p-5 gap-4">
                 {profiles.map((profile, index) => (
-                    <Card key={index} className="w-full">
+                    <Card key={index} className="w-full bg-white text-black">
                         <CardHeader>
                             <CardTitle>{profile.nombre}</CardTitle>
                             <CardDescription>Perfil {index + 1}</CardDescription>
@@ -106,12 +128,12 @@ export default function Perfil() {
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="w-full">
-                            <Plus className="mr-2 h-4 w-4" /> Agregar Perfil
+                        <Button className="w-full text-[#4CCD99]">
+                            <Plus className="mr-2 h-4 w-4 text-[#4CCD99]" /> Agregar Perfil
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
+                    <DialogContent className="sm:max-w-[425px] mx-auto my-8 p-6 rounded-lg shadow-lg max-h-[80vh] overflow-y-auto bg-white text-black">
+                    <DialogHeader>
                             <DialogTitle>{editingProfile ? 'Editar Perfil' : 'Nuevo Perfil'}</DialogTitle>
                             <DialogDescription>
                                 {editingProfile ? 'Modifica los datos del perfil aquí.' : 'Ingresa los datos para el nuevo perfil.'}
@@ -126,7 +148,7 @@ export default function Perfil() {
                                         <FormItem>
                                             <FormLabel>Nombre</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Tu nombre" {...field} />
+                                                <Input placeholder="Tu nombre" {...field} className="text-black" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -142,7 +164,7 @@ export default function Perfil() {
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Selecciona tu sexo" />
+                                                        <SelectValue placeholder="Selecciona tu sexo" className="text-black" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -165,7 +187,7 @@ export default function Perfil() {
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Selecciona la frecuencia de ejercicio" />
+                                                        <SelectValue placeholder="Selecciona la frecuencia de ejercicio" className="text-black" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
@@ -186,7 +208,7 @@ export default function Perfil() {
                                         <FormItem>
                                             <FormLabel>Peso (kg)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                                                <Input type="number" {...field} className="text-black" onChange={(e) => field.onChange(parseFloat(e.target.value))} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -200,7 +222,7 @@ export default function Perfil() {
                                         <FormItem>
                                             <FormLabel>Altura (cm)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                                                <Input type="number" {...field} className="text-black"   onChange={(e) => field.onChange(parseFloat(e.target.value))} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -371,7 +393,9 @@ export default function Perfil() {
                     </DialogContent>
                 </Dialog>
             </div>
-            <Navbar selected="Perfil" />
+            <div className="flex justify-center fixed bottom-0 z-50 w-full">
+                <Navbar selected="Perfil"/>
+            </div>
         </main>
     );
 }
