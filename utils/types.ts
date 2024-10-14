@@ -1,10 +1,18 @@
 export interface FoodItem {
-  _id: string;
+  _id: string; // Add this line
   name: string;
-  category: string;
-  amount: string;
   unit: string;
+  amount: string;
+  category: string;
+  location: string;
   expirationDate: string;
   dateAdded: string;
-  location: string;
+}
+
+export interface ScannedCollection {
+  _id?: string;
+  title: string;
+  image: string;
+  items: FoodItem[];
+  dateAdded: string;
 }

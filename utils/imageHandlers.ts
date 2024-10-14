@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { FoodItem } from './types';
+import { FoodItem, ScannedCollection } from './types';
 
 export const handleImageUpload = (
   photo: File,
@@ -74,15 +74,19 @@ export const handleJsonAnalysis = (response: string, setJsonResponse: Dispatch<S
 
 export const handleSaveToAlacena = async (
   jsonResponse: FoodItem[],
-  setScannedGroup: Dispatch<SetStateAction<FoodItem[]>>,
-  loadScannedGroup: () => Promise<void>,
+  setScannedCollections: Dispatch<SetStateAction<ScannedCollection[]>>,
+  loadScannedCollections: () => Promise<void>,
+  loadAllFoodItems: () => Promise<void>,
   onReset: () => void,
-  image: string | null // Add this parameter
+  image: string | null,
+  title: string
 ) => {
   try {
-    const dataToSave = {
-      ...jsonResponse[0], // Assuming jsonResponse is an array with a single object
-      image: image, // Include the image data
+    const dataToSave: ScannedCollection = {
+      title,
+      image: image || '',
+      items: jsonResponse,
+      dateAdded: new Date().toISOString(),
     };
 
     const response = await fetch('/api/saveToAlacena', {
@@ -97,9 +101,11 @@ export const handleSaveToAlacena = async (
       throw new Error('Failed to save to alacena');
     }
 
-    console.log('Data saved successfully');
-    setScannedGroup((prev) => [...prev, ...jsonResponse]);
-    await loadScannedGroup();
+    const result = await response.json();
+    console.log('Data saved successfully:', result);
+
+    await loadScannedCollections();
+    await loadAllFoodItems();
     onReset();
   } catch (error) {
     console.error('Error saving to alacena:', error);

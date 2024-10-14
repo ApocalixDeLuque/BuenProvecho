@@ -13,7 +13,7 @@ import {
   handleJsonAnalysis,
 } from '../utils/imageHandlers';
 import { DataContext } from './_components/DataContext';
-import { FoodItem } from '../utils/types';
+import { FoodItem, ScannedCollection } from '../utils/types';
 
 const Home: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -21,11 +21,12 @@ const Home: React.FC = () => {
   const [response, setResponse] = useState('');
   const [jsonResponse, setJsonResponse] = useState<FoodItem[] | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const { scannedGroup, setScannedGroup, loadScannedGroup } = useContext(DataContext);
-  const [foodLists, setFoodLists] = useState<FoodList[]>([]);
+  const { scannedCollections, setScannedCollections, allFoodItems, loadScannedCollections, loadAllFoodItems } =
+    useContext(DataContext);
 
   useEffect(() => {
-    loadScannedGroup();
+    loadScannedCollections();
+    loadAllFoodItems();
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -39,7 +40,7 @@ const Home: React.FC = () => {
     e.preventDefault();
     setSubmitted(true);
     if (file) {
-      await handleAnalysis(file, setResponse, image); // Pass the image here
+      await handleAnalysis(file, setResponse, image);
     }
   };
 
@@ -50,6 +51,21 @@ const Home: React.FC = () => {
     setResponse('');
     setJsonResponse(null);
     setSubmitted(false);
+  };
+
+  const handleSave = async () => {
+    if (jsonResponse && image) {
+      const title = `Escaneo ${new Date().toLocaleString()}`;
+      await handleSaveToAlacena(
+        jsonResponse,
+        setScannedCollections,
+        loadScannedCollections,
+        loadAllFoodItems,
+        onReset,
+        image,
+        title
+      );
+    }
   };
 
   return (
@@ -103,9 +119,9 @@ const Home: React.FC = () => {
             <div className="flex flex-col">
               <button
                 className="flex w-full justify-center items-center bg-black/10 text-black font-semibold py-2 px-4 border-2 border-black rounded shadow hover:bg-black/20"
-                onClick={() => console.log(scannedGroup)}
+                onClick={() => console.log(scannedCollections)}
               >
-                <p className="text-center text-spwhite">Print scannedGroup</p>
+                <p className="text-center text-spwhite">Print scannedCollections</p>
               </button>
               <p>{response ? `[${response}]` : 'No response yet'}</p>
             </div>
@@ -127,11 +143,21 @@ const Home: React.FC = () => {
                 </p>
                 {jsonResponse.length > 0 ? (
                   <>
-                    <FoodList foodLists={foodLists} setFoodLists={setFoodLists} />
+                    <FoodList
+                      scannedCollections={[
+                        {
+                          _id: 'temp',
+                          title: 'Escaneo actual',
+                          image,
+                          items: jsonResponse,
+                          dateAdded: new Date().toISOString(),
+                        },
+                      ]}
+                      setScannedCollections={setScannedCollections}
+                      allFoodItems={jsonResponse}
+                    />
                     <button
-                      onClick={() =>
-                        handleSaveToAlacena(jsonResponse, setScannedGroup, loadScannedGroup, onReset, image)
-                      }
+                      onClick={handleSave}
                       className="w-full bg-bpgreen/50 hover:bg-bpgreen text-green-700 font-semibold py-2 px-4 border-2 border-bpgreen rounded shadow"
                     >
                       Guardar en alacena
@@ -149,10 +175,12 @@ const Home: React.FC = () => {
 
         <div className="flex flex-col text-spblack text-center text-pretty gap-4">
           <p className="text-2xl font-semibold py-8">Mi Alacena</p>
-          {scannedGroup.length > 0 ? (
-            <>
-              <FoodList foodLists={foodLists} setFoodLists={setFoodLists} />
-            </>
+          {scannedCollections.length > 0 ? (
+            <FoodList
+              scannedCollections={scannedCollections}
+              setScannedCollections={setScannedCollections}
+              allFoodItems={allFoodItems}
+            />
           ) : (
             <div className="flex flex-col items-start w-full border-2 border-gray-200 bg-gray-100 rounded-lg p-4">
               Tu lista de alimentos escaneados previamente aparecerá aquí

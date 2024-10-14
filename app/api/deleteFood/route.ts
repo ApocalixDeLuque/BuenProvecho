@@ -8,17 +8,26 @@ export async function DELETE(req: NextRequest) {
     const db = client.db('BuenProvecho');
     const collection = db.collection('Food');
 
-    const { id } = await req.json();
+    // Extract collectionId and itemId from the request body
+    const { collectionId, itemId } = await req.json();
 
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    if (!collectionId || !itemId) {
+      return NextResponse.json({ error: 'Missing collectionId or itemId' }, { status: 400 });
+    }
 
-    if (result.deletedCount === 1) {
-      return NextResponse.json({ message: 'Food deleted successfully' }, { status: 200 });
+    // Update the document by removing the specific item from the items array
+    const result = await collection.updateOne(
+      { _id: new ObjectId(collectionId) },
+      { $pull: { items: { _id: itemId } } as any } // Use 'as any' to bypass type checking
+    );
+
+    if (result.modifiedCount === 1) {
+      return NextResponse.json({ message: 'Food item deleted successfully' }, { status: 200 });
     } else {
-      return NextResponse.json({ error: 'Food not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Food item or collection not found' }, { status: 404 });
     }
   } catch (error: any) {
-    console.error('Error deleting document from MongoDB:', error.message);
-    return NextResponse.json({ error: `Error deleting document from MongoDB: ${error.message}` }, { status: 500 });
+    console.error('Error deleting food item from MongoDB:', error.message);
+    return NextResponse.json({ error: `Error deleting food item from MongoDB: ${error.message}` }, { status: 500 });
   }
 }

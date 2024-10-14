@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
@@ -12,54 +12,55 @@ import {
   DialogDescription,
   DialogClose,
 } from './Dialog';
-import { FoodItem } from '../../../utils/types';
+import { FoodItem, ScannedCollection } from '../../../utils/types';
 import { CategoryTag, LocationTag } from './Tags';
 import { convertHours } from '../../../utils/timeConversion';
 
-interface FoodList {
-  _id: string;
-  image: string | null;
-  items: FoodItem[];
-}
-
 interface FoodListProps {
-  foodLists: FoodList[];
-  setFoodLists: React.Dispatch<React.SetStateAction<FoodList[]>>;
+  scannedCollections: ScannedCollection[];
+  setScannedCollections: React.Dispatch<React.SetStateAction<ScannedCollection[]>>;
+  allFoodItems: FoodItem[];
 }
 
-const FoodList: React.FC<FoodListProps> = ({ foodLists, setFoodLists }) => {
-  const [selectedItem, setSelectedItem] = useState<{ listId: string; item: FoodItem } | null>(null);
+const FoodList: React.FC<FoodListProps> = ({ scannedCollections, setScannedCollections, allFoodItems }) => {
+  const [selectedItem, setSelectedItem] = useState<{ collectionId: string; item: FoodItem } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'all' | 'lists'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'collections'>('all');
 
-  const allItems = foodLists.flatMap((list) => list.items.map((item) => ({ listId: list._id, ...item })));
-
-  const handleDeleteClick = (listId: string, item: FoodItem) => {
-    setSelectedItem({ listId, item });
+  const handleDeleteClick = (collectionId: string, item: FoodItem) => {
+    setSelectedItem({ collectionId, item });
     setIsDialogOpen(true);
   };
 
+  useEffect(() => {
+    console.log('scannedCollections received:', scannedCollections);
+    console.log('allFoodItems received:', allFoodItems);
+  }, [scannedCollections, allFoodItems]);
+
   const handleConfirmDelete = async () => {
-    if (selectedItem) {
+    if (selectedItem && selectedItem.item._id) {
       try {
         const response = await fetch('/api/deleteFood', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ listId: selectedItem.listId, itemId: selectedItem.item._id }),
+          body: JSON.stringify({ collectionId: selectedItem.collectionId, itemId: selectedItem.item._id }),
         });
 
         if (response.ok) {
-          setFoodLists(
-            (prevLists) =>
-              prevLists
-                .map((list) =>
-                  list._id === selectedItem.listId
-                    ? { ...list, items: list.items.filter((item) => item._id !== selectedItem.item._id) }
-                    : list
+          setScannedCollections(
+            (prevCollections) =>
+              prevCollections
+                .map((collection) =>
+                  collection._id === selectedItem.collectionId
+                    ? {
+                        ...collection,
+                        items: collection.items.filter((item) => item._id !== selectedItem.item._id),
+                      }
+                    : collection
                 )
-                .filter((list) => list.items.length > 0) // Remove empty lists
+                .filter((collection) => collection.items.length > 0) // Remove empty collections
           );
           console.log(`Item deleted: ${selectedItem.item.name}`);
         } else {
@@ -73,8 +74,11 @@ const FoodList: React.FC<FoodListProps> = ({ foodLists, setFoodLists }) => {
     setIsDialogOpen(false);
   };
 
-  const renderItem = (listId: string, item: FoodItem) => (
-    <div key={item._id} className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4">
+  const renderItem = (collectionId: string, item: FoodItem) => (
+    <div
+      key={item._id || `${item.name}-${item.dateAdded}`}
+      className="flex flex-col items-start w-full border border-gray-300 bg-white rounded-lg p-4"
+    >
       <div className="flex w-full justify-between items-start">
         <p className="text-start text-lg leading-tight font-bold">{item.name}</p>
         <CategoryTag category={item.category} />
@@ -95,7 +99,7 @@ const FoodList: React.FC<FoodListProps> = ({ foodLists, setFoodLists }) => {
       <div className="flex w-full items-end justify-between text-sm">
         <p className="text-gray-500 pt-2">Registrado el: {item.dateAdded}</p>
         <button
-          onClick={() => handleDeleteClick(listId, item)}
+          onClick={() => handleDeleteClick(collectionId, item)}
           className={cn(
             'flex items-center justify-center',
             'bg-red-500/10 text-red-500 border border-red-500',
@@ -118,27 +122,45 @@ const FoodList: React.FC<FoodListProps> = ({ foodLists, setFoodLists }) => {
           Todos los artículos
         </button>
         <button
-          onClick={() => setViewMode('lists')}
-          className={`px-4 py-2 rounded ${viewMode === 'lists' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          onClick={() => setViewMode('collections')}
+          className={`px-4 py-2 rounded ${viewMode === 'collections' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          Listas de escaneo
+          Colecciones escaneadas
         </button>
       </div>
 
-      {viewMode === 'all'
-        ? allItems.map((item) => renderItem(item.listId, item))
-        : foodLists.map((list, index) => (
-            <div key={list._id} className="border border-gray-300 rounded-lg p-4 mb-4">
-              <h3 className="text-xl font-bold mb-2">Lista de escaneo {index + 1}</h3>
-              {list.image && (
-                <div className="relative w-full h-48 mb-4">
-                  <Image src={list.image} alt="Scanned items" layout="fill" objectFit="cover" className="rounded-lg" />
-                </div>
-              )}
-              <p className="mb-2">Artículos escaneados: {list.items.length}</p>
-              {list.items.map((item) => renderItem(list._id, item))}
-            </div>
-          ))}
+      {viewMode === 'all' ? (
+        allFoodItems.length > 0 ? (
+          allFoodItems.map((item) => {
+            const collection = scannedCollections.find((c) => c.items.some((i) => i._id === item._id));
+            return collection ? renderItem(collection._id || '', item) : null;
+          })
+        ) : (
+          <p>No se encontraron artículos.</p>
+        )
+      ) : scannedCollections.length > 0 ? (
+        scannedCollections.map((collection) => (
+          <div key={collection._id} className="border border-gray-300 rounded-lg p-4 mb-4">
+            <h3 className="text-xl font-bold mb-2">{collection.title}</h3>
+            {collection.image && (
+              <div className="relative w-full h-48 mb-4">
+                <Image
+                  src={collection.image}
+                  alt="Scanned items"
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-lg"
+                />
+              </div>
+            )}
+            <p className="mb-2">Artículos escaneados: {collection.items.length}</p>
+            <p className="mb-4">Fecha de escaneo: {new Date(collection.dateAdded).toLocaleString()}</p>
+            {collection.items.map((item) => renderItem(collection._id || '', item))}
+          </div>
+        ))
+      ) : (
+        <p>No se encontraron colecciones.</p>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-white">
