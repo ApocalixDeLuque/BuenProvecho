@@ -1,99 +1,47 @@
 'use client';
-import Image from 'next/image';
-import Navbar from './ui/Navbar';
-import CameraComponent from './ui/CameraComponent';
-import { FormEvent, useContext, useEffect, useState } from 'react';
-import FoodList from './ui/FoodList';
-import { FoodItem } from './ui/FoodList';
-import DataContext, { DataProvider } from './ui/DataContext';
 
-export default function Home() {
+import React, { useState, useContext, useEffect } from 'react';
+import Image from 'next/image';
+import { Navbar } from './_components/ui/Navbar';
+import CameraComponent from './_components/ui/CameraComponent';
+import FoodList from './_components/ui/FoodList';
+import {
+  handleImageUpload,
+  handleImageCapture,
+  handleAnalysis,
+  handleSaveToAlacena,
+  handleJsonAnalysis,
+} from '../utils/imageHandlers';
+import { DataContext } from './_components/DataContext';
+import { FoodItem } from '../utils/types';
+
+const Home: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [response, setResponse] = useState('');
   const [jsonResponse, setJsonResponse] = useState<FoodItem[] | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const { scannedGroup, setScannedGroup, loadScannedGroup } = useContext(DataContext);
-
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmitted(true);
-    const formData = new FormData();
-    formData.append('file', file as File);
-    fetch('/api/classifystream', {
-      method: 'POST',
-      body: formData,
-    }).then((res) => {
-      const reader = res.body?.getReader();
-      let tempResponse = '';
-      return new ReadableStream({
-        start(controller) {
-          return pump();
-          function pump(): any {
-            return reader?.read().then(({ done, value }) => {
-              if (done) {
-                controller.close();
-                setResponse(tempResponse);
-                return;
-              }
-              controller.enqueue(value);
-              const decoded = new TextDecoder('utf-8').decode(value);
-              tempResponse += decoded;
-              return pump();
-            });
-          }
-        },
-      });
-    });
-  };
-
-  const saveToMongoDB = async (jsonResponse: string) => {
-    try {
-      const parsedResponse = JSON.parse(jsonResponse);
-
-      if (!Array.isArray(parsedResponse)) {
-        throw new Error('Expected an array of objects');
-      }
-
-      for (const item of parsedResponse) {
-        const response = await fetch('api/saveToMongoDB', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(item),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to save document to MongoDB: ${errorText}`);
-        }
-      }
-
-      console.log('All items saved to MongoDB');
-    } catch (error: any) {
-      console.error('Error saving to MongoDB: ', error.message);
-    }
-  };
+  const [foodLists, setFoodLists] = useState<FoodList[]>([]);
 
   useEffect(() => {
-    if (response !== '') {
-      try {
-        console.log(response);
-        const jsonResponse = JSON.parse(response);
-        setJsonResponse(jsonResponse);
-        console.log('response updated: ', jsonResponse);
-        saveToMongoDB(JSON.stringify(jsonResponse)).then((r) => console.log(r));
-      } catch (error) {
-        console.error('Error parsing JSON: ', error);
-      }
+    loadScannedGroup();
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (response) {
+      handleJsonAnalysis(response, setJsonResponse);
     }
   }, [response]);
 
-  useEffect(() => {
-    //console log when the file is updated
-    console.log('file updated: ', file);
-  }, [file]);
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitted(true);
+    if (file) {
+      await handleAnalysis(file, setResponse, image); // Pass the image here
+    }
+  };
 
   const onReset = () => {
     window.scrollTo({ top: 0 });
@@ -102,75 +50,6 @@ export default function Home() {
     setResponse('');
     setJsonResponse(null);
     setSubmitted(false);
-  };
-
-  const handleTakePhoto = (photo: string) => {
-    setImage(photo);
-    const block = photo.split(';');
-    const contentType = block[0].split(':')[1]; // In this case "image/gif"
-    const realData = block[1].split(',')[1]; // In this case "R0lGODlhPQBEAPeoAJosM...."
-    const blob = b64toBlob(realData, contentType);
-    setFile(new File([blob], 'photo.jpg', { type: contentType }));
-  };
-
-  const handleUploadPhoto = (photo: File) => {
-    console.log('Uploading photo...', photo);
-    setFile(photo);
-
-    filetob64(photo)
-      .then((image) => {
-        setImage(image);
-      })
-      .catch((error) => {
-        console.error('Error converting file to base64:', error);
-      });
-  };
-
-  const filetob64 = (file: File): Promise<string> => {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result?.toString() || '');
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const b64toBlob = (b64Data: string, contentType: string, sliceSize = 512) => {
-    const byteCharacters = atob(b64Data);
-    const byteArrays = [];
-
-    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-      const slice = byteCharacters.slice(offset, offset + sliceSize);
-
-      const byteNumbers = new Array(slice.length);
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i);
-      }
-
-      const byteArray = new Uint8Array(byteNumbers);
-      byteArrays.push(byteArray);
-    }
-
-    const blob = new Blob(byteArrays, { type: contentType });
-    return blob;
-  };
-
-  useEffect(() => {
-    loadScannedGroup();
-  }, []);
-
-  const saveToAlacena = async () => {
-    console.log('Saving to alacena');
-    setScannedGroup((prev) => {
-      if (jsonResponse) {
-        return [...prev, ...jsonResponse];
-      } else {
-        return prev;
-      }
-    });
-    console.log('Scanned group updated: ', scannedGroup);
-    await loadScannedGroup();
-    onReset();
   };
 
   return (
@@ -186,7 +65,10 @@ export default function Home() {
         <p className="font-semibold">Escanea tus alimentos</p>
         <div className="flex flex-col w-[80vw] h-[45vh] border-4 border-white border-dashed rounded-xl" />
 
-        <CameraComponent onUploadPhoto={handleUploadPhoto} onTakePhoto={handleTakePhoto} />
+        <CameraComponent
+          onUploadPhoto={(photo) => handleImageUpload(photo, setFile, setImage)}
+          onTakePhoto={(photo) => handleImageCapture(photo, setFile, setImage)}
+        />
       </div>
       <div className="flex flex-col min-h-[101vh] w-full rounded-t-2xl p-5 pb-28 z-10 gap-1 bg-gray-100">
         <div className="flex self-center w-1/4 h-1.5 bg-gray-400 rounded-lg" />
@@ -216,7 +98,18 @@ export default function Home() {
                 Volver a tomar
               </button>
             </form>
-            {/* <p>[{response}]</p> */}
+
+            {/* DEV TOOLS */}
+            <div className="flex flex-col">
+              <button
+                className="flex w-full justify-center items-center bg-black/10 text-black font-semibold py-2 px-4 border-2 border-black rounded shadow hover:bg-black/20"
+                onClick={() => console.log(scannedGroup)}
+              >
+                <p className="text-center text-spwhite">Print scannedGroup</p>
+              </button>
+              <p>{response ? `[${response}]` : 'No response yet'}</p>
+            </div>
+
             {submitted && !jsonResponse && (
               <div className="flex flex-col items-center w-full font-bold border-2 border-gray-200 bg-gray-100 rounded-lg p-8 gap-4">
                 <div className="relative w-8 aspect-square">
@@ -234,9 +127,11 @@ export default function Home() {
                 </p>
                 {jsonResponse.length > 0 ? (
                   <>
-                    <FoodList items={jsonResponse} />
+                    <FoodList foodLists={foodLists} setFoodLists={setFoodLists} />
                     <button
-                      onClick={saveToAlacena}
+                      onClick={() =>
+                        handleSaveToAlacena(jsonResponse, setScannedGroup, loadScannedGroup, onReset, image)
+                      }
                       className="w-full bg-bpgreen/50 hover:bg-bpgreen text-green-700 font-semibold py-2 px-4 border-2 border-bpgreen rounded shadow"
                     >
                       Guardar en alacena
@@ -256,7 +151,7 @@ export default function Home() {
           <p className="text-2xl font-semibold py-8">Mi Alacena</p>
           {scannedGroup.length > 0 ? (
             <>
-              <FoodList items={scannedGroup} />
+              <FoodList foodLists={foodLists} setFoodLists={setFoodLists} />
             </>
           ) : (
             <div className="flex flex-col items-start w-full border-2 border-gray-200 bg-gray-100 rounded-lg p-4">
@@ -270,4 +165,6 @@ export default function Home() {
       </div>
     </main>
   );
-}
+};
+
+export default Home;
