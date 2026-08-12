@@ -1,18 +1,9 @@
 'use client';
 import { useContext, useEffect, useRef, useState } from 'react';
 import Navbar from '../ui/Navbar';
-import OpenAI from 'openai';
 import DataContext from '../ui/DataContext';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
-
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
-type ChatMessage = { role: string; content: string };
+type ChatMessage = { role: 'assistant' | 'user'; content: string };
 
 export default function Home() {
   const messagesEndRef = useRef(null);
@@ -36,8 +27,6 @@ export default function Home() {
     loadScannedGroup(); // Load data when component mounts
   }, []); // Dependencias vacías para que se ejecute solo una vez
 
-  const scannedItemsString = JSON.stringify(scannedGroup);
-  const chefPrompt = process.env.NEXT_PUBLIC_CHEFSITO_PROMPT || '';
   const handleUserInput = async () => {
     console.log('Array of scanned items:', scannedGroup);
     setIsLoading(true);
@@ -45,21 +34,23 @@ export default function Home() {
     setUserInput(''); // Borra la entrada inmediatamente
     setChatHistory((prevChat) => [...prevChat, { role: 'user', content: currentInput }]);
 
-    const chatCompletion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: `${chefPrompt}\n\nLista de productos de la alacena: ${JSON.stringify(scannedGroup)}`,
-        },
-        {
-          role: 'user',
-          content: currentInput,
-        },
-      ],
+    const messages = [...chatHistory, { role: 'user' as const, content: currentInput }];
+    const response = await fetch('/api/chefsito', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, scannedItems: scannedGroup }),
     });
 
-    const content = chatCompletion.choices[0].message.content || '';
+    if (!response.ok) {
+      setChatHistory((prevChat) => [
+        ...prevChat,
+        { role: 'assistant', content: 'No pude responder. Intenta de nuevo.' },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+
+    const { content } = (await response.json()) as { content: string };
     setChatHistory((prevChat) => [...prevChat, { role: 'assistant', content: content }]);
     setIsLoading(false);
   };

@@ -29,6 +29,8 @@ PROMPT="En la siguiente imágen, identifica los ingredientes y alimentos que exi
 CHEFSITO_PROMPT="Eres BuenProvecho, un asistente de IA que está especializado en recetas de cocina..."
 ```
 
+Keep `OPENAI_API_KEY` server-side. Never prefix it with `NEXT_PUBLIC_` or commit the `.env` file.
+
 > [!IMPORTANT]
 > To test the BuenProvecho app effectively, you'll need access to the original prompts that drive the system. If you wish to obtain these prompts for testing purposes, please reach out via the following methods:
 >
